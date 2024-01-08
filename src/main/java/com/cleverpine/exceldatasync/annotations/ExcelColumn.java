@@ -1,7 +1,5 @@
 package com.cleverpine.exceldatasync.annotations;
 
-import com.cleverpine.exceldatasync.mapper.ExcelExportCustomMapper;
-import com.cleverpine.exceldatasync.util.Constants;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -13,11 +11,6 @@ public @interface ExcelColumn {
 
     String name();
 
-    //Rename to columnOffset
-    //add new rowOffset
-    int index() default Constants.DEFAULT_SHEET_COLUMN_INDEX;
+    String letter();
 
-    Class<? extends ExcelExportCustomMapper> mapper() default ExcelExportCustomMapper.class;
-
-    String backgroundColor() default "";
 }

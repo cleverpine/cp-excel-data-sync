@@ -1,9 +1,9 @@
 package com.cleverpine.exceldatasync.mapper.impl;
 
-import com.cleverpine.exceldatasync.mapper.ExcelExportCustomMapper;
+import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
 import java.util.Optional;
 
-public class BooleanToUpperCaseMapperImpl implements ExcelExportCustomMapper<Boolean> {
+public class BooleanToUpperCaseMapperImpl implements ExcelCustomMapper<Boolean> {
 
     @Override
     public String toString(Boolean value) {

@@ -1,192 +1,113 @@
 package com.cleverpine.exceldatasync.util;
 
-import com.cleverpine.exceldatasync.annotations.ExcelColumn;
+import com.cleverpine.exceldatasync.annotations.ExcelMapper;
 import com.cleverpine.exceldatasync.exception.ReflectionException;
-import com.cleverpine.exceldatasync.mapper.ExcelExportCustomMapper;
-import java.lang.reflect.Field;
+import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DateUtil;
+
+
+import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.evaluateInCell;
+import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseDateOrInteger;
+import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseDoubleOrDefault;
+import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseYesNoToBoolean;
 
 @UtilityClass
 public final class ExcelValueMapper {
 
-    public static final Map<Class<?>, Function<Cell, ?>> CELL_VALUE_FUNCTION_MAP = createCellValueMap();
-    private static final Map<Class<? extends ExcelExportCustomMapper>, ExcelExportCustomMapper<?>> MAPPER_CACHE = new HashMap<>();
+    private static final Map<Class<?>, Function<Cell, ?>> FUNCTION_CACHE;
+    private static final Map<Class<? extends ExcelCustomMapper<?>>, ExcelCustomMapper<?>> MAPPER_CACHE = new ConcurrentHashMap<>();
 
-    public static Boolean mapBooleanFromBinaryAnswer(String binaryAnswer) {
-        if (binaryAnswer == null) {
-            return null;
-        }
+    static {
+        Map<Class<?>, Function<Cell, ?>> map = new ConcurrentHashMap<>();
+        map.put(String.class, ExcelValueMapper::mapString);
+        map.put(Boolean.class, ExcelValueMapper::mapBoolean);
+        map.put(Double.class, ExcelValueMapper::mapDouble);
+        map.put(Integer.class, ExcelValueMapper::mapInteger);
+        map.put(BigDecimal.class, ExcelValueMapper::mapBigDecimal);
+        FUNCTION_CACHE = map;
+    }
 
-        switch (binaryAnswer) {
-            case "Yes", "Ja" -> {
-                return true;
-            }
-            case "No", "Nein" -> {
-                return false;
-            }
-            default -> {
-                return null;
-            }
+    public static <I> I createInstance(Class<I> classToInstantiate) {
+        try {
+            return classToInstantiate.getDeclaredConstructor().newInstance();
+        } catch (ReflectiveOperationException e) {
+            throw new ReflectionException(String.format(Constants.FAILED_TO_INSTANTIATE, classToInstantiate.getSimpleName()), e);
         }
     }
 
-    public static Boolean getBooleanValueFromCell(Cell cell) {
-        if (cell == null) {
-            return null;
+    public static Object mapCell(Cell cell, Class<?> fieldType, Optional<ExcelMapper> mapperAnnotation) {
+        if (mapperAnnotation.isPresent()) {
+            Class<? extends ExcelCustomMapper<?>> mapperClass = mapperAnnotation.get().mapper();
+            ExcelCustomMapper<?> mapper = MAPPER_CACHE.computeIfAbsent(mapperClass, ExcelValueMapper::createInstance);
+            String cellValue = cell.getStringCellValue();
+            return mapper.fromString(cellValue);
         }
 
-        switch (cell.getCellType()) {
-            case BOOLEAN -> {
-                return cell.getBooleanCellValue();
-            }
-            case STRING -> {
-                return mapBooleanFromBinaryAnswer(cell.getStringCellValue());
-            }
-            case FORMULA -> {
-                Cell evaluatedCell = cell.getSheet().getWorkbook().getCreationHelper()
-                        .createFormulaEvaluator().evaluateInCell(cell);
-                if (evaluatedCell.getCellType() == CellType.BOOLEAN) {
-                    return evaluatedCell.getBooleanCellValue();
-                }
-                return null;
-            }
-            default -> {
-                return null;
-            }
-        }
+        return FUNCTION_CACHE.get(fieldType).apply(cell);
     }
 
-    public static BigDecimal getBigDecimalValueFromCell(Cell cell) {
-        var doubleValue = getDoubleValueFromCell(cell);
-        if (doubleValue == null) {
-            return null;
-        }
-        return BigDecimal.valueOf(doubleValue);
-    }
-
-    public static Double getDoubleValueFromCell(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-
-        switch (cell.getCellType()) {
-            case NUMERIC -> {
-                return cell.getNumericCellValue();
-            }
-            case FORMULA -> {
-                Cell evaluatedCell = cell.getSheet().getWorkbook().getCreationHelper()
-                        .createFormulaEvaluator().evaluateInCell(cell);
-                if (evaluatedCell.getCellType() == CellType.NUMERIC) {
-                    return evaluatedCell.getNumericCellValue();
-                }
-                return null;
-            }
-            case STRING -> {
-                try {
-                    return Double.parseDouble(cell.getStringCellValue());
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-            }
-            default -> {
-                return null;
-            }
-        }
-    }
-
-    public static Integer getIntegerValueFromCell(Cell cell) {
-        var doubleValue = getDoubleValueFromCell(cell);
-        if (doubleValue == null) {
-            return null;
-        }
-        return doubleValue.intValue();
-    }
-
-    public static String getStringValueFromCell(Cell cell) {
+    public static String mapString(Cell cell) {
         if (cell == null) {
             return "";
         }
 
-        switch (cell.getCellType()) {
-            case STRING -> {
-                return cell.getStringCellValue();
-            }
-            case NUMERIC -> {
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    // Convert date to a string format you prefer
-                    return new java.text.SimpleDateFormat("MM/dd/yyyy").format(cell.getDateCellValue());
-                } else {
-                    return Integer.toString((int) cell.getNumericCellValue());
-                }
-            }
-            case BOOLEAN -> {
-                return Boolean.toString(cell.getBooleanCellValue());
-            }
-            case FORMULA -> {
-                return getStringValueFromCell(cell.getSheet().getWorkbook().getCreationHelper()
-                        .createFormulaEvaluator().evaluateInCell(cell));
-            }
-            default -> {
-                return "";
-            }
-        }
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case BOOLEAN -> Boolean.toString(cell.getBooleanCellValue());
+            case FORMULA -> mapString(evaluateInCell(cell));
+            case NUMERIC -> parseDateOrInteger(cell);
+            default -> "";
+        };
     }
 
-    public static Object getValueFromCell(Field excelColumnField, Map<Class<?>, Function<Cell, ?>> cellValueFunctionMap, Cell cell,
-            Class<? extends ExcelExportCustomMapper> mapperClass) {
-        Object value;
-        if (mapperClass != ExcelExportCustomMapper.class) {
-            value = getValueFromString(mapperClass, cell.getStringCellValue());
-        } else {
-            value = cellValueFunctionMap.get(excelColumnField.getType()).apply(cell);
-        }
-        return value;
-    }
-
-    public static Object getValueFromString(Class<? extends ExcelExportCustomMapper> excelMapperClass, String value) {
-        var mapper = MAPPER_CACHE.computeIfAbsent(excelMapperClass, key -> createInstance(key, Constants.MAPPER));
-
-        return mapper.fromString(value);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static String getMapperValue(Object obj, Field field) throws Exception {
-        if (field.isAnnotationPresent(ExcelColumn.class)) {
-            var annotation = field.getAnnotation(ExcelColumn.class);
-
-            var mapper = (ExcelExportCustomMapper<Boolean>) MAPPER_CACHE.computeIfAbsent(annotation.mapper(),
-                    key -> createInstance(key, Constants.MAPPER));
-
-            var fieldValue = (Boolean) field.get(obj);
-
-            return mapper.toString(fieldValue);
+    public static Boolean mapBoolean(Cell cell) {
+        if (cell == null) {
+            return null;
         }
 
-        return null;
+        return switch (cell.getCellType()) {
+            case BOOLEAN -> cell.getBooleanCellValue();
+            case FORMULA -> mapBoolean(evaluateInCell(cell));
+            case STRING -> parseYesNoToBoolean(cell);
+            default -> null;
+        };
     }
 
-    public static <T> T createInstance(Class<T> aClass, String instanceName) {
-        try {
-            return aClass.getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new ReflectionException(String.format(Constants.FAILED_TO_INSTANTIATE, instanceName), e);
+    public static Double mapDouble(Cell cell) {
+        if (cell == null) {
+            return null;
         }
+
+        return switch (cell.getCellType()) {
+            case NUMERIC -> cell.getNumericCellValue();
+            case FORMULA -> mapDouble(evaluateInCell(cell));
+            case STRING -> parseDoubleOrDefault(cell, null);
+            default -> null;
+        };
     }
 
-    private static Map<Class<?>, Function<Cell, ?>> createCellValueMap() {
-        return Map.of(
-                String.class, ExcelValueMapper::getStringValueFromCell,
-                Boolean.class, ExcelValueMapper::getBooleanValueFromCell,
-                BigDecimal.class, ExcelValueMapper::getBigDecimalValueFromCell,
-                Double.class, ExcelValueMapper::getDoubleValueFromCell,
-                Integer.class, ExcelValueMapper::getIntegerValueFromCell
-        );
+    public static Integer mapInteger(Cell cell) {
+        Double doubleValue = mapDouble(cell);
+        if (doubleValue == null) {
+            return null;
+        }
+
+        return doubleValue.intValue();
     }
+
+    public static BigDecimal mapBigDecimal(Cell cell) {
+        Double doubleValue = mapDouble(cell);
+        if (doubleValue == null) {
+            return null;
+        }
+
+        return BigDecimal.valueOf(doubleValue);
+    }
+
 }

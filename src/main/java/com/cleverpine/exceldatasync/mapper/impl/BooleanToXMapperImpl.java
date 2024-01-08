@@ -1,8 +1,8 @@
 package com.cleverpine.exceldatasync.mapper.impl;
 
-import com.cleverpine.exceldatasync.mapper.ExcelExportCustomMapper;
+import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
 
-public class BooleanToXMapperImpl implements ExcelExportCustomMapper<Boolean> {
+public class BooleanToXMapperImpl implements ExcelCustomMapper<Boolean> {
 
     @Override
     public String toString(Boolean value) {
