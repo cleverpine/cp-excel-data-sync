@@ -8,36 +8,29 @@ import org.apache.poi.ss.usermodel.DateUtil;
 @UtilityClass
 public final class ExcelCellParsingHelper {
 
+    public static String parseDateOrNumber(Cell cell) {
+        if (DateUtil.isCellDateFormatted(cell)) {
+            return new SimpleDateFormat("MM/dd/yyyy").format(cell.getDateCellValue());
+        }
+
+        return Integer.toString((int) cell.getNumericCellValue());
+    }
+
     public static Boolean parseYesNoToBoolean(Cell cell) {
-        String binaryAnswer = cell.getStringCellValue();
+        String binaryAnswer = cell.getStringCellValue().toUpperCase();
         return switch (binaryAnswer) {
-            case "Yes", "Ja" -> true;
-            case "No", "Nein" -> false;
+            case "TRUE", "YES", "JA" -> true;
+            case "FALSE", "NO", "NEIN" -> false;
             default -> null;
         };
     }
 
-    public static String parseDateOrInteger(Cell cell) {
-        if (DateUtil.isCellDateFormatted(cell)) {
-            return new SimpleDateFormat("MM/dd/yyyy").format(cell.getDateCellValue());
-        }
-        return Integer.toString((int) cell.getNumericCellValue());
-    }
-
-    public static Double parseDoubleOrDefault(Cell cell, Double defaultValue) {
+    public static Double parseNumericOrNull(Cell cell) {
         try {
             return Double.parseDouble(cell.getStringCellValue());
         } catch (NumberFormatException e) {
-            return defaultValue;
+            return null;
         }
-    }
-
-    public static Cell evaluateInCell(Cell cell) {
-        return cell.getSheet()
-                .getWorkbook()
-                .getCreationHelper()
-                .createFormulaEvaluator()
-                .evaluateInCell(cell);
     }
 
 }

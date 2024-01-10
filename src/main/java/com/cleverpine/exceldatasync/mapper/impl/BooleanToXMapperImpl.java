@@ -17,7 +17,7 @@ public class BooleanToXMapperImpl implements ExcelCustomMapper<Boolean> {
         if (value.isEmpty()) {
             return false;
         }
-        if (value.equals("X")) {
+        if (value.equalsIgnoreCase("X")) {
             return true;
         }
         throw new IllegalArgumentException("Value must be X or empty");
