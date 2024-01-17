@@ -16,6 +16,7 @@ public final class ExcelCellParsingHelper {
         return Integer.toString((int) cell.getNumericCellValue());
     }
 
+    // TODO: Extract custom mapper for this
     public static Boolean parseYesNoToBoolean(Cell cell) {
         String binaryAnswer = cell.getStringCellValue().toUpperCase();
         return switch (binaryAnswer) {
