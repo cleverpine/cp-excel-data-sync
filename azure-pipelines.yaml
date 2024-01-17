@@ -1,9 +1,5 @@
 trigger:
   - main
-  - develop
-  - stage
-  - release*
-  - feature*
 
 pr: none
 
@@ -17,6 +13,4 @@ resources:
       name: DevOps/azure-pipeline-templates
 
 extends:
-  template: pipeline-fe-library.yaml@templates
-  parameters:
-    libraryName: 'cp-excel-data-sync'
+  template: pipeline-be-library.yaml@templates
