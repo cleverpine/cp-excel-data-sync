@@ -7,6 +7,6 @@ import java.util.function.Consumer;
 
 public interface ExcelImportService {
 
-    <Dto extends ExcelDto> void importFrom(InputStream inputStream, Class<Dto> dtoClass, ExcelConfig config, Consumer<List<Dto>> batchConsumer);
+    <Dto extends ExcelDto> void importFrom(InputStream inputStream, Class<Dto> dtoClass, ExcelImportConfig config, Consumer<List<Dto>> batchConsumer);
 
 }

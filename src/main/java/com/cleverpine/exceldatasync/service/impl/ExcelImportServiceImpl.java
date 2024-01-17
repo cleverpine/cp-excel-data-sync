@@ -5,7 +5,7 @@ import com.cleverpine.exceldatasync.annotations.ExcelMapper;
 import com.cleverpine.exceldatasync.annotations.ExcelSheet;
 import com.cleverpine.exceldatasync.dto.ExcelDto;
 import com.cleverpine.exceldatasync.exception.ExcelException;
-import com.cleverpine.exceldatasync.service.api.ExcelConfig;
+import com.cleverpine.exceldatasync.service.api.ExcelImportConfig;
 import com.cleverpine.exceldatasync.service.api.ExcelImportService;
 import com.cleverpine.exceldatasync.util.Constants;
 import com.github.pjfanning.xlsx.StreamingReader;
@@ -44,7 +44,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
     }
 
     @Override
-    public <Dto extends ExcelDto> void importFrom(InputStream inputStream, Class<Dto> dtoClass, ExcelConfig config, Consumer<List<Dto>> batchConsumer) {
+    public <Dto extends ExcelDto> void importFrom(InputStream inputStream, Class<Dto> dtoClass, ExcelImportConfig config, Consumer<List<Dto>> batchConsumer) {
         try (Workbook workbook = createWorkbook(inputStream)) {
 
             Iterator<Dto> iterator = getClassIterator(dtoClass, workbook);

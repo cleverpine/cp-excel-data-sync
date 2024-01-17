@@ -1,7 +1,7 @@
 import com.cleverpine.exceldatasync.dto.ExcelDto;
-import com.cleverpine.exceldatasync.service.api.ExcelConfig;
+import com.cleverpine.exceldatasync.service.api.ExcelImportConfig;
 import com.cleverpine.exceldatasync.service.api.ExcelImportService;
-import com.cleverpine.exceldatasync.service.impl.ExcelConfigImpl;
+import com.cleverpine.exceldatasync.service.impl.ExcelImportConfigImpl;
 import com.cleverpine.exceldatasync.service.impl.ExcelImportServiceImpl;
 import dto.AircraftDto;
 import dto.EngineDto;
@@ -44,7 +44,7 @@ public class ExcelImportTests {
 
     @Test
     void excelImport_shouldExtractAircraftData_withDefaultBatchSize_fromCustomSheetCoordinates() {
-        ExcelConfigImpl config = ExcelConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
+        ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
 
         long startTime = System.currentTimeMillis();
         excelImportService.importFrom(inputStream, AircraftDto.class, config, this::processAircraft);
@@ -61,7 +61,7 @@ public class ExcelImportTests {
 
     @Test
     void excelImport_shouldExtractEngineData_withCustomBatchSize_fromDefaultSheetCoordinates() {
-        ExcelConfigImpl config = ExcelConfigImpl.builder().batchSize(5000).build();
+        ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(5000).build();
 
         long startTime = System.currentTimeMillis();
         excelImportService.importFrom(inputStream, EngineDto.class, config, this::processEngines);
@@ -101,13 +101,13 @@ public class ExcelImportTests {
         assertEquals(TOTAL_ROWS, numberOfRows);
     }
 
-    private void assertNumberOfBatches(ExcelConfig config) {
+    private void assertNumberOfBatches(ExcelImportConfig config) {
         int expectedBatches = (int) Math.ceil((double) TOTAL_ROWS / config.getBatchSize());
         int numberOfBatches = batchSizes.size();
         assertEquals(expectedBatches, numberOfBatches);
     }
 
-    private <Dto extends ExcelDto> void verifyBatch(ExcelConfig config, List<Dto> firstElements, List<Dto> lastElements) {
+    private <Dto extends ExcelDto> void verifyBatch(ExcelImportConfig config, List<Dto> firstElements, List<Dto> lastElements) {
         int firstElementId = 1;
         int lastElementId;
 
