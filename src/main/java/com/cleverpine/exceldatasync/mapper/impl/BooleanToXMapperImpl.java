@@ -4,9 +4,11 @@ import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
 
 public class BooleanToXMapperImpl implements ExcelCustomMapper<Boolean> {
 
+    public static final String SELECTED = "X";
+
     @Override
     public String toString(Boolean value) {
-        return (value != null && value) ? "X" : "";
+        return (value != null && value) ? SELECTED : "";
     }
 
     @Override
@@ -17,9 +19,9 @@ public class BooleanToXMapperImpl implements ExcelCustomMapper<Boolean> {
         if (value.isEmpty()) {
             return false;
         }
-        if (value.equals("X")) {
+        if (value.equalsIgnoreCase(SELECTED)) {
             return true;
         }
-        throw new IllegalArgumentException("Value must be X or empty");
+        throw new IllegalArgumentException("Value must be " + SELECTED + " or empty");
     }
 }

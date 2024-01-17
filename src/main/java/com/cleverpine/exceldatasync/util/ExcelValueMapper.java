@@ -3,7 +3,6 @@ package com.cleverpine.exceldatasync.util;
 import com.cleverpine.exceldatasync.annotations.ExcelMapper;
 import com.cleverpine.exceldatasync.exception.ReflectionException;
 import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
-import java.math.BigDecimal;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,9 +11,8 @@ import lombok.experimental.UtilityClass;
 import org.apache.poi.ss.usermodel.Cell;
 
 
-import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.evaluateInCell;
-import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseDateOrInteger;
-import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseDoubleOrDefault;
+import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseDateOrNumber;
+import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseNumericOrNull;
 import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseYesNoToBoolean;
 
 @UtilityClass
@@ -26,10 +24,12 @@ public final class ExcelValueMapper {
     static {
         Map<Class<?>, Function<Cell, ?>> map = new ConcurrentHashMap<>();
         map.put(String.class, ExcelValueMapper::mapString);
+        map.put(boolean.class, ExcelValueMapper::mapBoolean);
         map.put(Boolean.class, ExcelValueMapper::mapBoolean);
+        map.put(double.class, ExcelValueMapper::mapDouble);
         map.put(Double.class, ExcelValueMapper::mapDouble);
+        map.put(int.class, ExcelValueMapper::mapInteger);
         map.put(Integer.class, ExcelValueMapper::mapInteger);
-        map.put(BigDecimal.class, ExcelValueMapper::mapBigDecimal);
         FUNCTION_CACHE = map;
     }
 
@@ -53,41 +53,26 @@ public final class ExcelValueMapper {
     }
 
     public static String mapString(Cell cell) {
-        if (cell == null) {
-            return "";
-        }
-
         return switch (cell.getCellType()) {
-            case STRING -> cell.getStringCellValue();
+            case STRING, FORMULA -> cell.getStringCellValue().trim();
             case BOOLEAN -> Boolean.toString(cell.getBooleanCellValue());
-            case FORMULA -> mapString(evaluateInCell(cell));
-            case NUMERIC -> parseDateOrInteger(cell);
+            case NUMERIC -> parseDateOrNumber(cell);
             default -> "";
         };
     }
 
     public static Boolean mapBoolean(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-
         return switch (cell.getCellType()) {
-            case BOOLEAN -> cell.getBooleanCellValue();
-            case FORMULA -> mapBoolean(evaluateInCell(cell));
+            case BOOLEAN, FORMULA -> cell.getBooleanCellValue();
             case STRING -> parseYesNoToBoolean(cell);
             default -> null;
         };
     }
 
     public static Double mapDouble(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-
         return switch (cell.getCellType()) {
-            case NUMERIC -> cell.getNumericCellValue();
-            case FORMULA -> mapDouble(evaluateInCell(cell));
-            case STRING -> parseDoubleOrDefault(cell, null);
+            case NUMERIC, FORMULA -> cell.getNumericCellValue();
+            case STRING -> parseNumericOrNull(cell);
             default -> null;
         };
     }
@@ -98,16 +83,6 @@ public final class ExcelValueMapper {
             return null;
         }
 
-        return doubleValue.intValue();
+        return (int) Math.rint(doubleValue);
     }
-
-    public static BigDecimal mapBigDecimal(Cell cell) {
-        Double doubleValue = mapDouble(cell);
-        if (doubleValue == null) {
-            return null;
-        }
-
-        return BigDecimal.valueOf(doubleValue);
-    }
-
 }

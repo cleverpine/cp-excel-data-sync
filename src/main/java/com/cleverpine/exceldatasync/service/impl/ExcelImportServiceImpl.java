@@ -9,6 +9,7 @@ import com.cleverpine.exceldatasync.service.api.ExcelConfig;
 import com.cleverpine.exceldatasync.service.api.ExcelImportService;
 import com.cleverpine.exceldatasync.util.Constants;
 import com.github.pjfanning.xlsx.StreamingReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
@@ -37,12 +38,6 @@ public class ExcelImportServiceImpl implements ExcelImportService {
 
     private final VarHandleCache varHandleCache = new VarHandleCache();
 
-    public static Object getValueFromCell(Field excelColumnField, Cell cell) {
-        Optional<ExcelMapper> mapperAnnotation = getMapperAnnotation(excelColumnField);
-        Class<?> fieldType = excelColumnField.getType();
-        return mapCell(cell, fieldType, mapperAnnotation);
-    }
-
     @Override
     public <Dto extends ExcelDto> void importFrom(InputStream inputStream, Class<Dto> dtoClass, ExcelConfig config, Consumer<List<Dto>> batchConsumer) {
         try (Workbook workbook = createWorkbook(inputStream)) {
@@ -54,7 +49,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 batchConsumer.accept(batch);
             }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new ExcelException(FAILED_TO_INITIALIZE_WORKBOOK_ERROR_MESSAGE, e);
         }
     }
@@ -126,6 +121,16 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         ExcelColumn columnAnnotation = getColumnAnnotation(excelColumnField);
         int columnNumber = getColumnNumber(columnAnnotation.letter());
         return row.getCell(columnNumber, CREATE_NULL_AS_BLANK);
+    }
+
+    private Object getValueFromCell(Field excelColumnField, Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+
+        Optional<ExcelMapper> mapperAnnotation = getMapperAnnotation(excelColumnField);
+        Class<?> fieldType = excelColumnField.getType();
+        return mapCell(cell, fieldType, mapperAnnotation);
     }
 
 }
