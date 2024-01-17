@@ -123,7 +123,13 @@ public class ExcelImportServiceImpl implements ExcelImportService {
     }
 
     private Cell getCellFromRow(Field excelColumnField, Row row) {
-        ExcelColumn columnAnnotation = getColumnAnnotation(excelColumnField);
+        /**
+         * TODO
+         * You assume that all fields need a column annotation, but I am not sure if that is correct.
+         * Maybe you want to allow for fields without a column annotation, and then just skip them here?
+         */
+        ExcelColumn columnAnnotation = getColumnAnnotation(excelColumnField)
+                .orElseThrow(() -> new IllegalStateException(Constants.EXCEL_COLUMN_ANNOTATION_IS_MISSING));
         int columnNumber = getColumnNumber(columnAnnotation.letter());
         return row.getCell(columnNumber, CREATE_NULL_AS_BLANK);
     }

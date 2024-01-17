@@ -20,9 +20,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getSheetAnnotation;
+import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getColumnAnnotation;
+import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getMapperAnnotation;
 public class ExcelExportServiceImpl implements ExcelExportService {
-    private static final String DEFAULT_SHEET_NAME = "Sheet";
-
     @Override
     public byte[] export(ExcelExportConfig config) {
         try (var workbook = new SXSSFWorkbook(); var outputStream = new ByteArrayOutputStream()) {
@@ -52,7 +53,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         do {
             pageable = pageDataFunction.apply(pageable);
             writeDataToWorkbook(workbook, pageable.getPageData(), dtoClass);
-            pageable.next();
+            pageable = pageable.next();
         } while (pageable.hasNext());
     }
 
@@ -60,8 +61,8 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             SXSSFWorkbook workbook,
             List<Dto> dataList,
             Class<Dto> dtoClass) {
-        var sheetAnnotation = dtoClass.getAnnotation(ExcelSheet.class);
-        var sheetName = sheetAnnotation != null ? sheetAnnotation.name() : DEFAULT_SHEET_NAME;
+        var sheetAnnotation = getSheetAnnotation(dtoClass);
+        var sheetName = sheetAnnotation.name();
         var sheet = workbook.getSheet(sheetName);
 
         if (sheet == null) {
@@ -92,17 +93,16 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             field.setAccessible(true);
 
             try {
-                if (field.isAnnotationPresent(ExcelColumn.class)) {
-                    var annotation = field.getAnnotation(ExcelColumn.class);
+                var columnAnnotationOpt = getColumnAnnotation(field);
+                if (columnAnnotationOpt.isEmpty()) {
+                    continue;
+                }
 
-                    // If mapper exists, use it
-                    if (annotation.mapper() != E.class) {
-                        var mappedValue = getMapperValue(dataObject, field);
-                        if (mappedValue != null) {
-                            assignCellValue(row.createCell(entry.getKey()), mappedValue);
-                            continue;
-                        }
-                    }
+                var mapperAnnotationOpt = getMapperAnnotation(field);
+                if (mapperAnnotationOpt.isPresent()) {
+                    var mapperAnnotation = mapperAnnotationOpt.get();
+                    assignCellValue(row.createCell(entry.getKey()), mapperAnnotation.value());
+                    continue;
                 }
 
                 var value = field.get(dataObject);
