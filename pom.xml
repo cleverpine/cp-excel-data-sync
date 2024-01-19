@@ -6,7 +6,7 @@
 
     <groupId>com.cleverpine</groupId>
     <artifactId>cp-excel-data-sync</artifactId>
-    <version>${app.version}</version>
+    <version>${revision}</version>
 
     <properties>
         <app.version>1.0.1</app.version>
@@ -21,6 +21,8 @@
         <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+        <revision>1.0.1</revision>
+
     </properties>
 
     <dependencies>
