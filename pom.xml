@@ -9,7 +9,7 @@
     <version>${app.version}</version>
 
     <properties>
-        <app.version>1.0.0</app.version>
+        <app.version>1.0.1</app.version>
         <excel-streaming-reader.version>4.2.1</excel-streaming-reader.version>
         <lombok.version>1.18.30</lombok.version>
         <junit.version>5.10.1</junit.version>
