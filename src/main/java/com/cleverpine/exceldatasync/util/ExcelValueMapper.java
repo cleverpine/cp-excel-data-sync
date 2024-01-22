@@ -3,6 +3,9 @@ package com.cleverpine.exceldatasync.util;
 import com.cleverpine.exceldatasync.annotations.ExcelMapper;
 import com.cleverpine.exceldatasync.exception.ReflectionException;
 import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -94,6 +97,6 @@ public final class ExcelValueMapper {
             return null;
         }
 
-        return Math.round(doubleValue);
+        return BigDecimal.valueOf(doubleValue).setScale(0, RoundingMode.HALF_UP).longValue();
     }
 }

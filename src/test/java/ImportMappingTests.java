@@ -91,7 +91,7 @@ public class ImportMappingTests extends ImportTests {
 
     @Test
     void longValues_shouldBeParsedCorrectly() {
-        verifyLongMapping(0, 2147483649L);
+        verifyLongMapping(0, 9223372036854730000L);
         verifyLongMapping(1, 2147483655L);
         verifyLongMapping(2, 2147483669L);
         verifyLongMapping(3, 2147483622L);
@@ -100,7 +100,7 @@ public class ImportMappingTests extends ImportTests {
         verifyLongMapping(6, 2147483655L);
         verifyLongMapping(7, 2147483666L);
         verifyLongMapping(8, 2147483677L);
-        verifyLongMapping(9, 2147483688L);
+        verifyLongMapping(9, 9223372036854770000L);
     }
 
     private void verifyLongMapping(int index, long expected) {
