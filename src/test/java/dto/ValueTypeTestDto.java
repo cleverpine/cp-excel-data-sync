@@ -61,4 +61,13 @@ public class ValueTypeTestDto implements ExcelDto {
     @ExcelMapper(mapper = BooleanToXMapperImpl.class)
     private Boolean customBoolean;
 
+    // Long
+    @ExcelColumn(name = "numeric_long", letter = "N")
+    private long numericLong;
+    @ExcelColumn(name = "formula_long", letter = "O")
+    private long formulaLong;
+    @ExcelColumn(name = "string_long", letter = "P")
+    private Long stringLong;
+
+
 }
