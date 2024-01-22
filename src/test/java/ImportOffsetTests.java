@@ -1,18 +1,20 @@
 import com.cleverpine.exceldatasync.dto.ExcelDto;
+import com.cleverpine.exceldatasync.exception.ExcelException;
 import com.cleverpine.exceldatasync.service.api.ExcelConfig;
 import com.cleverpine.exceldatasync.service.impl.ExcelConfigImpl;
 import dto.AircraftDto;
 import dto.EngineDto;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
+import dto.NoHeaderDto;
+import dto.NoHeadersDocumentDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
 import static com.cleverpine.exceldatasync.util.Constants.BATCH_IMPORT_SIZE;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ImportOffsetTests extends ImportTests {
 
@@ -75,6 +77,15 @@ public class ImportOffsetTests extends ImportTests {
                 () -> assertNumberOfBatches(config),
                 () -> verifyBatch(config, firstEngineElements, lastEngineElements)
         );
+    }
+
+    @Test
+    void sheetNoHeadersAndStartPositionBeforeNonRelevantDtoData_thenThrowsExcelException() {
+        assertThrows(ExcelException.class, () -> {
+            ExcelConfigImpl config = ExcelConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
+            excelImportService.importFrom(inputStream, NoHeaderDto.class, config, (batch) -> {
+            });
+        });
     }
 
     private void measureExecutionTime(Runnable runnable) {
