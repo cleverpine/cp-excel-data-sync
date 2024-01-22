@@ -30,6 +30,8 @@ public final class ExcelValueMapper {
         map.put(Double.class, ExcelValueMapper::mapDouble);
         map.put(int.class, ExcelValueMapper::mapInteger);
         map.put(Integer.class, ExcelValueMapper::mapInteger);
+        map.put(Long.class, ExcelValueMapper::mapLong);
+        map.put(long.class, ExcelValueMapper::mapLong);
         FUNCTION_CACHE = map;
     }
 
@@ -84,5 +86,14 @@ public final class ExcelValueMapper {
         }
 
         return (int) Math.rint(doubleValue);
+    }
+
+    public static Long mapLong(Cell cell) {
+        Double doubleValue = mapDouble(cell);
+        if (doubleValue == null) {
+            return null;
+        }
+
+        return Math.round(doubleValue);
     }
 }
