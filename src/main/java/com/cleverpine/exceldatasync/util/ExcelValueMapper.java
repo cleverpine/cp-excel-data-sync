@@ -3,6 +3,9 @@ package com.cleverpine.exceldatasync.util;
 import com.cleverpine.exceldatasync.annotations.ExcelMapper;
 import com.cleverpine.exceldatasync.exception.ReflectionException;
 import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +33,8 @@ public final class ExcelValueMapper {
         map.put(Double.class, ExcelValueMapper::mapDouble);
         map.put(int.class, ExcelValueMapper::mapInteger);
         map.put(Integer.class, ExcelValueMapper::mapInteger);
+        map.put(Long.class, ExcelValueMapper::mapLong);
+        map.put(long.class, ExcelValueMapper::mapLong);
         FUNCTION_CACHE = map;
     }
 
@@ -84,5 +89,14 @@ public final class ExcelValueMapper {
         }
 
         return (int) Math.rint(doubleValue);
+    }
+
+    public static Long mapLong(Cell cell) {
+        Double doubleValue = mapDouble(cell);
+        if (doubleValue == null) {
+            return null;
+        }
+
+        return BigDecimal.valueOf(doubleValue).setScale(0, RoundingMode.HALF_UP).longValue();
     }
 }

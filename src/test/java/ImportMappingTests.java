@@ -89,6 +89,27 @@ public class ImportMappingTests extends ImportTests {
         verifyCustomMapping(9, true);
     }
 
+    @Test
+    void longValues_shouldBeParsedCorrectly() {
+        verifyLongMapping(0, 9223372036854730000L);
+        verifyLongMapping(1, 2147483655L);
+        verifyLongMapping(2, 2147483669L);
+        verifyLongMapping(3, 2147483622L);
+        verifyLongMapping(4, 2147483699L);
+        verifyLongMapping(5, 2147483612L);
+        verifyLongMapping(6, 2147483655L);
+        verifyLongMapping(7, 2147483666L);
+        verifyLongMapping(8, 2147483677L);
+        verifyLongMapping(9, 9223372036854770000L);
+    }
+
+    private void verifyLongMapping(int index, long expected) {
+        ValueTypeTestDto dto = testDtoList.get(index);
+        assertEquals(expected, dto.getNumericLong());
+        assertEquals(expected, dto.getFormulaLong());
+        assertEquals(expected, dto.getStringLong());
+    }
+
     private void verifyBooleanMapping(int index, boolean expected) {
         ValueTypeTestDto dto = testDtoList.get(index);
         assertEquals(expected, dto.isGeneralBoolean());
