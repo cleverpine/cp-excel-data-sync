@@ -1,6 +1,6 @@
 package com.cleverpine.exceldatasync.service.api;
 
-public interface ExcelConfig {
+public interface ExcelImportConfig {
 
     int getBatchSize();
 

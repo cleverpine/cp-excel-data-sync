@@ -1,4 +1,4 @@
-import com.cleverpine.exceldatasync.service.impl.ExcelConfigImpl;
+import com.cleverpine.exceldatasync.service.impl.ExcelImportConfigImpl;
 import dto.ValueTypeTestDto;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ public class ImportMappingTests extends ImportTests {
 
     @BeforeEach
     void setup() {
-        ExcelConfigImpl config = ExcelConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
+        ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
         excelImportService.importFrom(inputStream, ValueTypeTestDto.class, config, testDtoList::addAll);
     }
 

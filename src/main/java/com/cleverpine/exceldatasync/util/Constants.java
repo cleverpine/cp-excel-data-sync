@@ -11,6 +11,8 @@ public final class Constants {
     public static final String FAILED_TO_INITIALIZE_WORKBOOK_ERROR_MESSAGE = "Error while initializing workbook";
 
     public static final int DEFAULT_STARTING_ROW = 1;
+
+    public static final String DEFAULT_SHEET_NAME = "Sheet";
     public static final String MAPPER = "mapper";
     public static final int BATCH_IMPORT_SIZE = 1000;
 

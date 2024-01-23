@@ -23,12 +23,8 @@ public final class ExcelAnnotationHelper {
         return sheetAnnotation;
     }
 
-    public static ExcelColumn getColumnAnnotation(Field excelColumnField) {
-        ExcelColumn columnAnnotation = excelColumnField.getAnnotation(ExcelColumn.class);
-        if (columnAnnotation == null) {
-            throw new IllegalStateException(EXCEL_COLUMN_ANNOTATION_IS_MISSING);
-        }
-        return columnAnnotation;
+    public static Optional<ExcelColumn> getColumnAnnotation(Field excelColumnField) {
+        return Optional.ofNullable(excelColumnField.getAnnotation(ExcelColumn.class));
     }
 
     public static Optional<ExcelMapper> getMapperAnnotation(Field excelColumnField) {

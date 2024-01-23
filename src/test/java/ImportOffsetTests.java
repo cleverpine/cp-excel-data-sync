@@ -1,11 +1,10 @@
 import com.cleverpine.exceldatasync.dto.ExcelDto;
 import com.cleverpine.exceldatasync.exception.ExcelException;
-import com.cleverpine.exceldatasync.service.api.ExcelConfig;
-import com.cleverpine.exceldatasync.service.impl.ExcelConfigImpl;
+import com.cleverpine.exceldatasync.service.api.ExcelImportConfig;
+import com.cleverpine.exceldatasync.service.impl.ExcelImportConfigImpl;
 import dto.AircraftDto;
 import dto.EngineDto;
 import dto.NoHeaderDto;
-import dto.NoHeadersDocumentDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +36,7 @@ public class ImportOffsetTests extends ImportTests {
 
     @Test
     void sheetWithCustomCoordinates_shouldImportWithDefaultBatchSize() {
-        ExcelConfigImpl config = ExcelConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
+        ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
 
         Consumer<List<AircraftDto>> processAircraft = batch -> {
             batchSizes.add(batch.size());
@@ -59,7 +58,7 @@ public class ImportOffsetTests extends ImportTests {
 
     @Test
     void sheetWithDefaultCoordinates_shouldImportWithCustomBatchSize() {
-        ExcelConfigImpl config = ExcelConfigImpl.builder().batchSize(5000).build();
+        ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(5000).build();
 
         Consumer<List<EngineDto>> processEngines = batch -> {
             batchSizes.add(batch.size());
@@ -82,7 +81,7 @@ public class ImportOffsetTests extends ImportTests {
     @Test
     void sheetNoHeadersAndStartPositionBeforeNonRelevantDtoData_thenThrowsExcelException() {
         assertThrows(ExcelException.class, () -> {
-            ExcelConfigImpl config = ExcelConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
+            ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
             excelImportService.importFrom(inputStream, NoHeaderDto.class, config, (batch) -> {
             });
         });
@@ -101,13 +100,13 @@ public class ImportOffsetTests extends ImportTests {
         assertEquals(TOTAL_ROWS, numberOfRows);
     }
 
-    private void assertNumberOfBatches(ExcelConfig config) {
+    private void assertNumberOfBatches(ExcelImportConfig config) {
         int expectedBatches = (int) Math.ceil((double) TOTAL_ROWS / config.getBatchSize());
         int numberOfBatches = batchSizes.size();
         assertEquals(expectedBatches, numberOfBatches);
     }
 
-    private <Dto extends ExcelDto> void verifyBatch(ExcelConfig config, List<Dto> firstElements, List<Dto> lastElements) {
+    private <Dto extends ExcelDto> void verifyBatch(ExcelImportConfig config, List<Dto> firstElements, List<Dto> lastElements) {
         int firstElementId = 1;
         int lastElementId;
 
