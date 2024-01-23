@@ -14,6 +14,4 @@ import java.lang.annotation.Target;
 public @interface ExcelMapper {
 
     Class<? extends ExcelCustomMapper<?>> mapper();
-
-    Class<?> value();
 }

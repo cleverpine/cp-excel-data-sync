@@ -16,7 +16,7 @@ public final class VarHandleCache {
     private final Map<Class<?>, Field[]> fieldsCache = new ConcurrentHashMap<>();
 
     // Cache for storing VarHandles associated with DTO class fields
-    private final  Map<Class<?>, Map<String, VarHandle>> varHandleCache = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Map<String, VarHandle>> varHandleCache = new ConcurrentHashMap<>();
 
     // Cache for storing MethodHandles.Lookup instances associated with DTO classes
     private final Map<Class<?>, MethodHandles.Lookup> lookupCache = new ConcurrentHashMap<>();

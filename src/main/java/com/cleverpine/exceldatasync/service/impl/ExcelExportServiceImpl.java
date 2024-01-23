@@ -104,7 +104,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                 var mapperAnnotationOpt = getMapperAnnotation(field);
                 if (mapperAnnotationOpt.isPresent()) {
                     var mapperAnnotation = mapperAnnotationOpt.get();
-                    assignCellValue(row.createCell(columnIndex), mapperAnnotation.value());
+                    assignCellValue(row.createCell(columnIndex), mapperAnnotation);
                     continue;
                 }
 
@@ -177,6 +177,7 @@ public class ExcelExportServiceImpl implements ExcelExportService {
             }
         }
     }
+
 
     private static void setBackgroundColor(ExcelColumn column, CellStyle style) {
         if (!column.backgroundColor().isEmpty()) {

@@ -9,25 +9,20 @@ import com.cleverpine.exceldatasync.service.api.ExcelImportConfig;
 import com.cleverpine.exceldatasync.service.api.ExcelImportService;
 import com.cleverpine.exceldatasync.util.Constants;
 import com.github.pjfanning.xlsx.StreamingReader;
-import java.io.InputStream;
-import java.lang.invoke.VarHandle;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.function.Consumer;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
+import java.util.*;
+import java.util.function.Consumer;
 
 import static com.cleverpine.exceldatasync.util.Constants.FAILED_TO_INITIALIZE_WORKBOOK_ERROR_MESSAGE;
-import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getColumnAnnotation;
-import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getMapperAnnotation;
-import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getSheetAnnotation;
+import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.*;
 import static com.cleverpine.exceldatasync.util.ExcelColumnMapper.getColumnNumber;
 import static com.cleverpine.exceldatasync.util.ExcelValueMapper.createInstance;
 import static com.cleverpine.exceldatasync.util.ExcelValueMapper.mapCell;
@@ -36,12 +31,6 @@ import static org.apache.poi.ss.usermodel.Row.MissingCellPolicy.CREATE_NULL_AS_B
 public class ExcelImportServiceImpl implements ExcelImportService {
 
     private final VarHandleCache varHandleCache = new VarHandleCache();
-
-    public static Object getValueFromCell(Field excelColumnField, Cell cell) {
-        Optional<ExcelMapper> mapperAnnotation = getMapperAnnotation(excelColumnField);
-        Class<?> fieldType = excelColumnField.getType();
-        return mapCell(cell, fieldType, mapperAnnotation);
-    }
 
     @Override
     public <Dto extends ExcelDto> void importFrom(InputStream inputStream, Class<Dto> dtoClass, ExcelImportConfig config, Consumer<List<Dto>> batchConsumer) {
@@ -54,7 +43,7 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 batchConsumer.accept(batch);
             }
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new ExcelException(FAILED_TO_INITIALIZE_WORKBOOK_ERROR_MESSAGE, e);
         }
     }
@@ -70,9 +59,8 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         Field[] excelColumnFields = varHandleCache.getDeclaredFields(dtoClass);
         ExcelSheet sheetAnnotation = getSheetAnnotation(dtoClass);
         Sheet sheet = workbook.getSheet(sheetAnnotation.name());
-        int startingRow = sheetAnnotation.startingRow();
         Iterator<Row> rowIterator = sheet.rowIterator();
-
+        positionIterator(rowIterator, sheetAnnotation.startingRow());
         return new Iterator<>() {
             @Override
             public boolean hasNext() {
@@ -84,16 +72,27 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-
-                Row row = rowIterator.next();
-                // Skip rows until we reach the starting row, minus one because the row iterator starts from 0
-                while (row.getRowNum() <= startingRow - 1) {
-                    row = rowIterator.next();
-                }
-
+                final Row row = rowIterator.next();
                 return mapRow(row, dtoClass, excelColumnFields);
             }
         };
+    }
+
+    private void positionIterator(Iterator<Row> rowIterator, int startingRow) {
+        if (!rowIterator.hasNext()) {
+            return;
+        }
+        // The first call of returns first row that has data - could be before or after the desired starting row
+        Row row = rowIterator.next();
+        int startingRowIndex = startingRow - 1;
+        if (row.getRowNum() > startingRowIndex) {
+            // The first row that has data is after the desired starting row, so we can stop here
+            throw new ExcelException("Defined starting row is before the first row with cell data.");
+        }
+        // Skip rows until we reach the starting row, the processing starts with the starting rows
+        while (rowIterator.hasNext() && row.getRowNum() < startingRowIndex) {
+            row = rowIterator.next();
+        }
     }
 
     private <Dto extends ExcelDto> List<Dto> createBatch(Iterator<Dto> iterator, int batchSize) {
@@ -132,6 +131,16 @@ public class ExcelImportServiceImpl implements ExcelImportService {
                 .orElseThrow(() -> new IllegalStateException(Constants.EXCEL_COLUMN_ANNOTATION_IS_MISSING));
         int columnNumber = getColumnNumber(columnAnnotation.letter());
         return row.getCell(columnNumber, CREATE_NULL_AS_BLANK);
+    }
+
+    private Object getValueFromCell(Field excelColumnField, Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+
+        Optional<ExcelMapper> mapperAnnotation = getMapperAnnotation(excelColumnField);
+        Class<?> fieldType = excelColumnField.getType();
+        return mapCell(cell, fieldType, mapperAnnotation);
     }
 
 }
