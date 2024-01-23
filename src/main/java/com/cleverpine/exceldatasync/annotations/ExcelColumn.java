@@ -14,5 +14,4 @@ public @interface ExcelColumn {
     String letter();
 
     String backgroundColor() default "";
-
 }

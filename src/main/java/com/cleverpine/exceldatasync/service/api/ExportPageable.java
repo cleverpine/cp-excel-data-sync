@@ -8,8 +8,6 @@ public interface ExportPageable<Dto extends ExcelDto> {
 
     List<Dto> getPageData();
 
-    ExportPageable<Dto> next();
-
     boolean hasNext();
 
 }

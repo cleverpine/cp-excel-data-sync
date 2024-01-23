@@ -1,12 +1,12 @@
 package com.cleverpine.exceldatasync.service.impl;
 
 import com.cleverpine.exceldatasync.annotations.ExcelColumn;
-import com.cleverpine.exceldatasync.annotations.ExcelSheet;
 import com.cleverpine.exceldatasync.dto.ExcelDto;
 import com.cleverpine.exceldatasync.service.api.ExcelExportConfig;
 import com.cleverpine.exceldatasync.service.api.ExcelExportService;
 import com.cleverpine.exceldatasync.service.api.ExcelSheetExportConfig;
 import com.cleverpine.exceldatasync.service.api.ExportPageable;
+import com.cleverpine.exceldatasync.util.ExcelColumnMapper;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
@@ -23,6 +23,7 @@ import java.util.Map;
 import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getSheetAnnotation;
 import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getColumnAnnotation;
 import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getMapperAnnotation;
+
 public class ExcelExportServiceImpl implements ExcelExportService {
     @Override
     public byte[] export(ExcelExportConfig config) {
@@ -53,7 +54,6 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         do {
             pageable = pageDataFunction.apply(pageable);
             writeDataToWorkbook(workbook, pageable.getPageData(), dtoClass);
-            pageable = pageable.next();
         } while (pageable.hasNext());
     }
 
@@ -87,8 +87,8 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         }
     }
 
-    private <Dto extends ExcelDto> void writeDataRow(Row row, Dto dataObject, Map<Integer, Field> fieldIndexMap) {
-        for (Map.Entry<Integer, Field> entry : fieldIndexMap.entrySet()) {
+    private <Dto extends ExcelDto> void writeDataRow(Row row, Dto dataObject, Map<String, Field> fieldIndexMap) {
+        for (Map.Entry<String, Field> entry : fieldIndexMap.entrySet()) {
             var field = entry.getValue();
             field.setAccessible(true);
 
@@ -98,16 +98,19 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                     continue;
                 }
 
+                var columnLetter = columnAnnotationOpt.get().letter();
+                int columnIndex = ExcelColumnMapper.getColumnNumber(columnLetter);
+
                 var mapperAnnotationOpt = getMapperAnnotation(field);
                 if (mapperAnnotationOpt.isPresent()) {
                     var mapperAnnotation = mapperAnnotationOpt.get();
-                    assignCellValue(row.createCell(entry.getKey()), mapperAnnotation.value());
+                    assignCellValue(row.createCell(columnIndex), mapperAnnotation.value());
                     continue;
                 }
 
                 var value = field.get(dataObject);
                 if (value != null) {
-                    assignCellValue(row.createCell(entry.getKey()), value);
+                    assignCellValue(row.createCell(columnIndex), value);
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);//TODO: custom exception
@@ -135,14 +138,14 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         }
     }
 
-    private <Dto extends ExcelDto> Map<Integer, Field> getFieldIndexMap(Class<Dto> clazz) {
+    private <Dto extends ExcelDto> Map<String, Field> getFieldIndexMap(Class<Dto> clazz) {
         var fields = clazz.getDeclaredFields();
-        Map<Integer, Field> fieldIndexMap = new HashMap<>();
+        Map<String, Field> fieldIndexMap = new HashMap<>();
 
         for (Field field : fields) {
             var column = field.getAnnotation(ExcelColumn.class);
             if (column != null) {
-                fieldIndexMap.put(column.index(), field);
+                fieldIndexMap.put(column.letter(), field);
             }
         }
         return fieldIndexMap;
@@ -160,8 +163,9 @@ public class ExcelExportServiceImpl implements ExcelExportService {
         for (Field field : fields) {
             var column = field.getAnnotation(ExcelColumn.class);
             if (column != null) {
+                int columnIndex = ExcelColumnMapper.getColumnNumber(column.letter());
                 // Set column name
-                var headerCell = headerRow.createCell(column.index());
+                var headerCell = headerRow.createCell(columnIndex);
                 headerCell.setCellValue(column.name());
 
                 var style = sheet.getWorkbook().createCellStyle();
