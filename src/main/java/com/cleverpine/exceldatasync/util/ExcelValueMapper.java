@@ -57,6 +57,12 @@ public final class ExcelValueMapper {
         return FUNCTION_CACHE.get(fieldType).apply(cell);
     }
 
+    public static <T> String mapCellValue(T value, ExcelMapper mapperAnnotation) {
+        var mapperClass = mapperAnnotation.mapper();
+        ExcelCustomMapper<T> mapper = (ExcelCustomMapper<T>) MAPPER_CACHE.computeIfAbsent(mapperClass, ExcelValueMapper::createInstance);
+        return mapper.toString(value);
+    }
+
     public static String mapString(Cell cell) {
         return switch (cell.getCellType()) {
             case STRING, FORMULA -> cell.getStringCellValue().trim();

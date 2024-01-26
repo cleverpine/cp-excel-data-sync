@@ -1,12 +1,15 @@
 package com.cleverpine.exceldatasync.service.impl;
 
 import com.cleverpine.exceldatasync.annotations.ExcelColumn;
+import com.cleverpine.exceldatasync.annotations.ExcelMapper;
 import com.cleverpine.exceldatasync.dto.ExcelDto;
+import com.cleverpine.exceldatasync.mapper.ExcelCustomMapper;
 import com.cleverpine.exceldatasync.service.api.ExcelExportConfig;
 import com.cleverpine.exceldatasync.service.api.ExcelExportService;
 import com.cleverpine.exceldatasync.service.api.ExcelSheetExportConfig;
 import com.cleverpine.exceldatasync.service.api.ExportPageable;
 import com.cleverpine.exceldatasync.util.ExcelColumnMapper;
+import com.cleverpine.exceldatasync.util.ExcelValueMapper;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
@@ -23,6 +26,7 @@ import java.util.Map;
 import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getSheetAnnotation;
 import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getColumnAnnotation;
 import static com.cleverpine.exceldatasync.util.ExcelAnnotationHelper.getMapperAnnotation;
+import static com.cleverpine.exceldatasync.util.ExcelValueMapper.mapCellValue;
 
 public class ExcelExportServiceImpl implements ExcelExportService {
     @Override
@@ -102,13 +106,13 @@ public class ExcelExportServiceImpl implements ExcelExportService {
                 int columnIndex = ExcelColumnMapper.getColumnNumber(columnLetter);
 
                 var mapperAnnotationOpt = getMapperAnnotation(field);
+                var value = field.get(dataObject);
                 if (mapperAnnotationOpt.isPresent()) {
                     var mapperAnnotation = mapperAnnotationOpt.get();
-                    assignCellValue(row.createCell(columnIndex), mapperAnnotation);
+                    assignCellValue(row.createCell(columnIndex), mapCellValue(value, mapperAnnotation));
                     continue;
                 }
 
-                var value = field.get(dataObject);
                 if (value != null) {
                     assignCellValue(row.createCell(columnIndex), value);
                 }
