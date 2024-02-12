@@ -1,5 +1,5 @@
-import com.cleverpine.exceldatasync.service.api.ExcelImportService;
-import com.cleverpine.exceldatasync.service.impl.ExcelImportServiceImpl;
+import com.cleverpine.exceldatasync.service.api.read.ExcelImportService;
+import com.cleverpine.exceldatasync.service.impl.read.ExcelImportServiceImpl;
 import java.io.InputStream;
 
 public abstract class ImportTests {

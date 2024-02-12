@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import lombok.experimental.UtilityClass;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 
 
 import static com.cleverpine.exceldatasync.util.ExcelCellParsingHelper.parseDateOrNumber;
@@ -31,6 +32,7 @@ public final class ExcelValueMapper {
         map.put(Boolean.class, ExcelValueMapper::mapBoolean);
         map.put(double.class, ExcelValueMapper::mapDouble);
         map.put(Double.class, ExcelValueMapper::mapDouble);
+        map.put(BigDecimal.class, ExcelValueMapper::mapBigDecimal);
         map.put(int.class, ExcelValueMapper::mapInteger);
         map.put(Integer.class, ExcelValueMapper::mapInteger);
         map.put(Long.class, ExcelValueMapper::mapLong);
@@ -48,6 +50,9 @@ public final class ExcelValueMapper {
 
     public static Object mapCell(Cell cell, Class<?> fieldType, Optional<ExcelMapper> mapperAnnotation) {
         if (mapperAnnotation.isPresent()) {
+            if (cell.getCellType() == CellType.BOOLEAN) {
+                return cell.getBooleanCellValue();
+            }
             Class<? extends ExcelCustomMapper<?>> mapperClass = mapperAnnotation.get().mapper();
             ExcelCustomMapper<?> mapper = MAPPER_CACHE.computeIfAbsent(mapperClass, ExcelValueMapper::createInstance);
             String cellValue = cell.getStringCellValue();
@@ -86,6 +91,14 @@ public final class ExcelValueMapper {
             case STRING -> parseNumericOrNull(cell);
             default -> null;
         };
+    }
+
+    public static BigDecimal mapBigDecimal(Cell cell) {
+        var doubleValue = mapDouble(cell);
+        if (doubleValue == null) {
+            return null;
+        }
+        return BigDecimal.valueOf(doubleValue);
     }
 
     public static Integer mapInteger(Cell cell) {
