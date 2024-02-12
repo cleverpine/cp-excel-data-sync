@@ -10,6 +10,7 @@ import com.cleverpine.exceldatasync.service.api.read.ExcelImportService;
 import com.cleverpine.exceldatasync.service.impl.VarHandleCache;
 import com.cleverpine.exceldatasync.util.Constants;
 import com.github.pjfanning.xlsx.StreamingReader;
+import lombok.extern.log4j.Log4j2;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -29,34 +30,28 @@ import static com.cleverpine.exceldatasync.util.ExcelValueMapper.createInstance;
 import static com.cleverpine.exceldatasync.util.ExcelValueMapper.mapCell;
 import static org.apache.poi.ss.usermodel.Row.MissingCellPolicy.CREATE_NULL_AS_BLANK;
 
+@Log4j2
 public class ExcelImportServiceImpl implements ExcelImportService {
 
     private final VarHandleCache varHandleCache = new VarHandleCache();
 
     @Override
-    public <Dto extends ExcelDto> void importFrom(InputStream inputStream, Class<Dto> dtoClass, ExcelImportConfig config,
-                                                  Consumer<List<Dto>> batchConsumer) {
-        try (Workbook workbook = createWorkbook(inputStream)) {
-
-            Iterator<Dto> iterator = getClassIterator(dtoClass, workbook);
-            while (iterator.hasNext()) {
-                int batchSize = config.getBatchSize();
-                List<Dto> batch = createBatch(iterator, batchSize);
-                batchConsumer.accept(batch);
-            }
-
-        } catch (IOException e) {
-            throw new ExcelException(FAILED_TO_INITIALIZE_WORKBOOK_ERROR_MESSAGE, e);
-        }
+    public <Dto extends ExcelDto> void importFrom(InputStream inputStream, ExcelSheetImportConfig<Dto> importConfig) {
+        importFrom(inputStream, new ExcelMultipleImportConfig(List.of(importConfig)));
     }
 
     @Override
     public void importFrom(InputStream inputStream, ExcelMultipleImportConfig config) {
+        if (isMultipleImportConfigurationMissing(config)) {
+            log.warn(Constants.IMPORT_CONFIGURATION_MISSING_ERROR_MESSAGE);
+            return;
+        }
         try (var workbook = createWorkbook(inputStream)) {
-            if (config == null || config.getSheets() == null || config.getSheets().isEmpty()) {
-                return;
-            }
             for (var sheetConfig : config.getSheets()) {
+                if (isSingleImprotConfigurationMissing(sheetConfig)) {
+                    log.warn(Constants.IMPORT_CONFIGURATION_MISSING_ERROR_MESSAGE);
+                    continue;
+                }
                 importSingleSheet(workbook, sheetConfig);
             }
         } catch (IOException e) {
@@ -68,8 +63,8 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         importFrom(workbook, sheetConfig.getDtoClass(), sheetConfig.getConfig(), sheetConfig.getBatchConsumer());
     }
 
-    public <Dto extends ExcelDto> void importFrom(Workbook workbook, Class<Dto> dtoClass, ExcelImportConfig config,
-                                                  Consumer<List<Dto>> batchConsumer) {
+    private <Dto extends ExcelDto> void importFrom(Workbook workbook, Class<Dto> dtoClass, ExcelImportConfig config,
+                                                   Consumer<List<Dto>> batchConsumer) {
         var iterator = getClassIterator(dtoClass, workbook);
         while (iterator.hasNext()) {
             int batchSize = config.getBatchSize();
@@ -170,4 +165,12 @@ public class ExcelImportServiceImpl implements ExcelImportService {
         return mapCell(cell, fieldType, mapperAnnotation);
     }
 
+    private boolean isMultipleImportConfigurationMissing(ExcelMultipleImportConfig config) {
+        return config == null || config.getSheets() == null || config.getSheets().isEmpty();
+    }
+
+    private <Dto extends ExcelDto> boolean isSingleImprotConfigurationMissing(ExcelSheetImportConfig<Dto> excelSheetImportConfig) {
+        return excelSheetImportConfig.getDtoClass() == null || excelSheetImportConfig.getConfig() == null
+                || excelSheetImportConfig.getBatchConsumer() == null;
+    }
 }

@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+
 @ExcelSheet(name = "Value_type_test")
 @AllArgsConstructor
 @NoArgsConstructor
@@ -69,5 +71,11 @@ public class ValueTypeTestDto implements ExcelDto {
     @ExcelColumn(name = "string_long", letter = "P")
     private Long stringLong;
 
-
+    // BigDecimal
+    @ExcelColumn(name = "numeric_double", letter = "E")
+    private BigDecimal numericBigDecimal;
+    @ExcelColumn(name = "formula_double", letter = "F")
+    private BigDecimal formulaBigDecimal;
+    @ExcelColumn(name = "string_double", letter = "G")
+    private BigDecimal stringBigDecimal;
 }

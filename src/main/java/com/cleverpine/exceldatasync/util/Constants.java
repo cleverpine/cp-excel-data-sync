@@ -9,6 +9,8 @@ public final class Constants {
     public static final String EXCEL_SHEET_ANNOTATION_IS_MISSING = "ExcelSheet annotation is missing";
     public static final String EXCEL_COLUMN_ANNOTATION_IS_MISSING = "ExcelColumn annotation is missing";
     public static final String FAILED_TO_INITIALIZE_WORKBOOK_ERROR_MESSAGE = "Error while initializing workbook";
+    public static final String IMPORT_CONFIGURATION_MISSING_ERROR_MESSAGE =
+            "Necessary configuration for importing from Excel is missing.";
 
     public static final int DEFAULT_STARTING_ROW = 1;
 

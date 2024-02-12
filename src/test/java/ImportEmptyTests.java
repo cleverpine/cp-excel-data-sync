@@ -18,7 +18,7 @@ public class ImportEmptyTests extends ImportTests {
     void importEmptySheetWhenNoHeaders_shouldReturnEmptyList() {
         final List<NoHeadersDocumentDto> documents = new ArrayList<>();
         ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
-        excelImportService.importFrom(inputStream, NoHeadersDocumentDto.class, config, documents::addAll);
+        excelImportService.importFrom(inputStream, new ExcelSheetImportConfig<>(NoHeadersDocumentDto.class, config, documents::addAll));
 
         assertEquals(0, documents.size());
     }
@@ -27,7 +27,7 @@ public class ImportEmptyTests extends ImportTests {
     void importFromEmptyTemplateWhenNoItems_shouldReturnEmptyList() {
         final List<DocumentDto> documents = new ArrayList<>();
         ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
-        excelImportService.importFrom(inputStream, DocumentDto.class, config, documents::addAll);
+        excelImportService.importFrom(inputStream, new ExcelSheetImportConfig<>(DocumentDto.class, config, documents::addAll));
 
         assertEquals(0, documents.size());
     }
