@@ -1,7 +1,9 @@
 import com.cleverpine.exceldatasync.dto.ExcelDto;
 import com.cleverpine.exceldatasync.exception.ExcelException;
-import com.cleverpine.exceldatasync.service.api.ExcelImportConfig;
-import com.cleverpine.exceldatasync.service.impl.ExcelImportConfigImpl;
+import com.cleverpine.exceldatasync.service.api.read.ExcelImportConfig;
+import com.cleverpine.exceldatasync.service.impl.read.ExcelImportConfigImpl;
+import com.cleverpine.exceldatasync.service.impl.read.ExcelMultipleImportConfig;
+import com.cleverpine.exceldatasync.service.impl.read.ExcelSheetImportConfig;
 import dto.AircraftDto;
 import dto.EngineDto;
 import dto.NoHeaderDto;
@@ -38,16 +40,10 @@ public class ImportOffsetTests extends ImportTests {
     void sheetWithCustomCoordinates_shouldImportWithDefaultBatchSize() {
         ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
 
-        Consumer<List<AircraftDto>> processAircraft = batch -> {
-            batchSizes.add(batch.size());
-            AircraftDto firstElement = batch.get(0);
-            firstAircraftElements.add(firstElement);
-            AircraftDto lastElement = batch.get(batch.size() - 1);
-            lastAircraftElements.add(lastElement);
-        };
+        var processAircraft = createAircraftDtoListConsumer();
 
         measureExecutionTime(
-                () -> excelImportService.importFrom(inputStream, AircraftDto.class, config, processAircraft));
+                () -> excelImportService.importFrom(inputStream, createExcelSheetImportConfig(AircraftDto.class, config, processAircraft)));
 
         assertAll(
                 this::assertNumberOfRows,
@@ -60,16 +56,10 @@ public class ImportOffsetTests extends ImportTests {
     void sheetWithDefaultCoordinates_shouldImportWithCustomBatchSize() {
         ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(5000).build();
 
-        Consumer<List<EngineDto>> processEngines = batch -> {
-            batchSizes.add(batch.size());
-            EngineDto firstElement = batch.get(0);
-            firstEngineElements.add(firstElement);
-            EngineDto lastElement = batch.get(batch.size() - 1);
-            lastEngineElements.add(lastElement);
-        };
+        var processEngines = createEngineDtoListConsumer();
 
         measureExecutionTime(
-                () -> excelImportService.importFrom(inputStream, EngineDto.class, config, processEngines));
+                () -> excelImportService.importFrom(inputStream, createExcelSheetImportConfig(EngineDto.class, config, processEngines)));
 
         assertAll(
                 this::assertNumberOfRows,
@@ -82,8 +72,57 @@ public class ImportOffsetTests extends ImportTests {
     void sheetNoHeadersAndStartPositionBeforeNonRelevantDtoData_thenThrowsExcelException() {
         assertThrows(ExcelException.class, () -> {
             ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
-            excelImportService.importFrom(inputStream, NoHeaderDto.class, config, (batch) -> {
-            });
+            excelImportService.importFrom(inputStream, createExcelSheetImportConfig(NoHeaderDto.class, config, (batch) -> {
+            }));
+        });
+    }
+
+    @Test
+    void multipleImport_onSheetWithCustomCoordinates_shouldImportWithDefaultBatchSize() {
+        ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
+
+        var processAircraft = createAircraftDtoListConsumer();
+
+        ExcelMultipleImportConfig multipleConfig =
+                new ExcelMultipleImportConfig(List.of(createExcelSheetImportConfig(AircraftDto.class, config, processAircraft)));
+
+        measureExecutionTime(
+                () -> excelImportService.importFrom(inputStream, multipleConfig));
+
+        assertAll(
+                this::assertNumberOfRows,
+                () -> assertNumberOfBatches(config),
+                () -> verifyBatch(config, firstAircraftElements, lastAircraftElements)
+        );
+    }
+
+    @Test
+    void multipleImport_onSheetWithDefaultCoordinates_shouldImportWithCustomBatchSize() {
+        ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(5000).build();
+
+        var processEngines = createEngineDtoListConsumer();
+
+        ExcelMultipleImportConfig multipleConfig =
+                new ExcelMultipleImportConfig(List.of(createExcelSheetImportConfig(EngineDto.class, config, processEngines)));
+
+        measureExecutionTime(
+                () -> excelImportService.importFrom(inputStream, multipleConfig));
+
+        assertAll(
+                this::assertNumberOfRows,
+                () -> assertNumberOfBatches(config),
+                () -> verifyBatch(config, firstEngineElements, lastEngineElements)
+        );
+    }
+
+    @Test
+    void multipleImport_onSheetNoHeadersAndStartPositionBeforeNonRelevantDtoData_thenThrowsExcelException() {
+        assertThrows(ExcelException.class, () -> {
+            ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
+            ExcelMultipleImportConfig multipleConfig =
+                    new ExcelMultipleImportConfig(List.of(createExcelSheetImportConfig(NoHeaderDto.class, config, (batch) -> {
+                    })));
+            excelImportService.importFrom(inputStream, multipleConfig);
         });
     }
 
@@ -134,5 +173,31 @@ public class ImportOffsetTests extends ImportTests {
 
             firstElementId += config.getBatchSize();
         }
+    }
+
+    private Consumer<List<AircraftDto>> createAircraftDtoListConsumer() {
+        return batch -> {
+            batchSizes.add(batch.size());
+            AircraftDto firstElement = batch.get(0);
+            firstAircraftElements.add(firstElement);
+            AircraftDto lastElement = batch.get(batch.size() - 1);
+            lastAircraftElements.add(lastElement);
+        };
+    }
+
+    private Consumer<List<EngineDto>> createEngineDtoListConsumer() {
+        return batch -> {
+            batchSizes.add(batch.size());
+            EngineDto firstElement = batch.get(0);
+            firstEngineElements.add(firstElement);
+            EngineDto lastElement = batch.get(batch.size() - 1);
+            lastEngineElements.add(lastElement);
+        };
+    }
+
+    private <Dto extends ExcelDto> ExcelSheetImportConfig<Dto> createExcelSheetImportConfig(Class<Dto> dtoClass,
+                                                                                            ExcelImportConfigImpl config,
+                                                                                            Consumer<List<Dto>> batchConsumer) {
+        return new ExcelSheetImportConfig<>(dtoClass, config, batchConsumer);
     }
 }

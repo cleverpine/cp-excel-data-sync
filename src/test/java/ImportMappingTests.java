@@ -1,10 +1,12 @@
-import com.cleverpine.exceldatasync.service.impl.ExcelImportConfigImpl;
+import com.cleverpine.exceldatasync.service.impl.read.ExcelImportConfigImpl;
+import com.cleverpine.exceldatasync.service.impl.read.ExcelSheetImportConfig;
 import dto.ValueTypeTestDto;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.cleverpine.exceldatasync.util.Constants.BATCH_IMPORT_SIZE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -16,7 +18,7 @@ public class ImportMappingTests extends ImportTests {
     @BeforeEach
     void setup() {
         ExcelImportConfigImpl config = ExcelImportConfigImpl.builder().batchSize(BATCH_IMPORT_SIZE).build();
-        excelImportService.importFrom(inputStream, ValueTypeTestDto.class, config, testDtoList::addAll);
+        excelImportService.importFrom(inputStream, new ExcelSheetImportConfig<>(ValueTypeTestDto.class, config, testDtoList::addAll));
     }
 
     @Test
@@ -103,6 +105,20 @@ public class ImportMappingTests extends ImportTests {
         verifyLongMapping(9, 9223372036854770000L);
     }
 
+    @Test
+    void bigDecimalValues_shouldBeParsedCorrectly() {
+        verifyBigDecimalMapping(0, BigDecimal.valueOf(1.11111));
+        verifyBigDecimalMapping(1, BigDecimal.valueOf(2.22222));
+        verifyBigDecimalMapping(2, BigDecimal.valueOf(3.33333));
+        verifyBigDecimalMapping(3, BigDecimal.valueOf(4.44444));
+        verifyBigDecimalMapping(4, BigDecimal.valueOf(5.55555));
+        verifyBigDecimalMapping(5, BigDecimal.valueOf(6.66666));
+        verifyBigDecimalMapping(6, BigDecimal.valueOf(7.77777));
+        verifyBigDecimalMapping(7, BigDecimal.valueOf(8.88888));
+        verifyBigDecimalMapping(8, BigDecimal.valueOf(9.99999));
+        verifyBigDecimalMapping(9, BigDecimal.valueOf(10.12345));
+    }
+
     private void verifyLongMapping(int index, long expected) {
         ValueTypeTestDto dto = testDtoList.get(index);
         assertEquals(expected, dto.getNumericLong());
@@ -124,6 +140,13 @@ public class ImportMappingTests extends ImportTests {
         assertEquals(expected, dto.getStringDouble());
     }
 
+    private void verifyBigDecimalMapping(int index, BigDecimal expected) {
+        ValueTypeTestDto dto = testDtoList.get(index);
+        assertEquals(expected, dto.getNumericBigDecimal());
+        assertEquals(expected, dto.getFormulaBigDecimal());
+        assertEquals(expected, dto.getStringBigDecimal());
+    }
+
     private void verifyIntegerMapping(int index, int expected) {
         ValueTypeTestDto dto = testDtoList.get(index);
         assertEquals(expected, dto.getGeneralInteger());
@@ -131,7 +154,8 @@ public class ImportMappingTests extends ImportTests {
         assertEquals(expected, dto.getStringInteger());
     }
 
-    private void verifyStringMapping(int index, String formulaAsString, String booleanAsString, String numericAsString, String dateAsString) {
+    private void verifyStringMapping(int index, String formulaAsString, String booleanAsString, String numericAsString,
+                                     String dateAsString) {
         ValueTypeTestDto dto = testDtoList.get(index);
         assertEquals(formulaAsString, dto.getFormulaString());
         assertEquals(booleanAsString, dto.getBooleanString());
