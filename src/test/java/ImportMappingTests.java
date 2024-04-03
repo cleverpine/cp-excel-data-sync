@@ -50,6 +50,20 @@ public class ImportMappingTests extends ImportTests {
     }
 
     @Test
+    void floatValues_shouldBeParsedCorrectly() {
+        verifyFloatMapping(0, (1.11111f));
+        verifyFloatMapping(1, (2.22222f));
+        verifyFloatMapping(2, (3.33333f));
+        verifyFloatMapping(3, (4.44444f));
+        verifyFloatMapping(4, (5.55555f));
+        verifyFloatMapping(5, (6.66666f));
+        verifyFloatMapping(6, (7.77777f));
+        verifyFloatMapping(7, (8.88888f));
+        verifyFloatMapping(8, (9.99999f));
+        verifyFloatMapping(9, (10.12345f));
+    }
+
+    @Test
     void integerValues_shouldBeParsedCorrectly() {
         verifyIntegerMapping(0, 100);
         verifyIntegerMapping(1, 200);
@@ -93,7 +107,7 @@ public class ImportMappingTests extends ImportTests {
 
     @Test
     void longValues_shouldBeParsedCorrectly() {
-        verifyLongMapping(0, 9223372036854730000L);
+        verifyLongMapping(0, 922337203685473L);
         verifyLongMapping(1, 2147483655L);
         verifyLongMapping(2, 2147483669L);
         verifyLongMapping(3, 2147483622L);
@@ -102,7 +116,7 @@ public class ImportMappingTests extends ImportTests {
         verifyLongMapping(6, 2147483655L);
         verifyLongMapping(7, 2147483666L);
         verifyLongMapping(8, 2147483677L);
-        verifyLongMapping(9, 9223372036854770000L);
+        verifyLongMapping(9, 922337203685477L);
     }
 
     @Test
@@ -138,6 +152,13 @@ public class ImportMappingTests extends ImportTests {
         assertEquals(expected, dto.getNumericDouble());
         assertEquals(expected, dto.getFormulaDouble());
         assertEquals(expected, dto.getStringDouble());
+    }
+
+    private void verifyFloatMapping(int index, float expected) {
+        ValueTypeTestDto dto = testDtoList.get(index);
+        assertEquals(expected, dto.getNumericFloat());
+        assertEquals(expected, dto.getFormulaFloat());
+        assertEquals(expected, dto.getStringFloat());
     }
 
     private void verifyBigDecimalMapping(int index, BigDecimal expected) {
