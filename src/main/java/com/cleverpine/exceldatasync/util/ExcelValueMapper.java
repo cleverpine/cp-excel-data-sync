@@ -32,6 +32,8 @@ public final class ExcelValueMapper {
         map.put(Boolean.class, ExcelValueMapper::mapBoolean);
         map.put(double.class, ExcelValueMapper::mapDouble);
         map.put(Double.class, ExcelValueMapper::mapDouble);
+        map.put(Float.class, ExcelValueMapper::mapFloat);
+        map.put(float.class, ExcelValueMapper::mapFloat);
         map.put(BigDecimal.class, ExcelValueMapper::mapBigDecimal);
         map.put(int.class, ExcelValueMapper::mapInteger);
         map.put(Integer.class, ExcelValueMapper::mapInteger);
@@ -93,6 +95,14 @@ public final class ExcelValueMapper {
         };
     }
 
+    public static Float mapFloat(Cell cell) {
+        var doubleValue = mapDouble(cell);
+        if (doubleValue == null) {
+            return null;
+        }
+        return doubleValue.floatValue();
+    }
+
     public static BigDecimal mapBigDecimal(Cell cell) {
         var doubleValue = mapDouble(cell);
         if (doubleValue == null) {
@@ -106,7 +116,6 @@ public final class ExcelValueMapper {
         if (doubleValue == null) {
             return null;
         }
-
         return (int) Math.rint(doubleValue);
     }
 

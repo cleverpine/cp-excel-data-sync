@@ -40,6 +40,14 @@ public class ValueTypeTestDto implements ExcelDto {
     @ExcelColumn(name = "string_double", letter = "G")
     private Double stringDouble;
 
+    // Float
+    @ExcelColumn(name = "numeric_double", letter = "E")
+    private float numericFloat;
+    @ExcelColumn(name = "formula_double", letter = "F")
+    private float formulaFloat;
+    @ExcelColumn(name = "string_double", letter = "G")
+    private Float stringFloat;
+
     // Integer
     @ExcelColumn(name = "general_integer", letter = "H")
     private int generalInteger;
